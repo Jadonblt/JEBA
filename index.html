@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b1220" />
+  <title>RideIntervals v0.2.0</title>
+  <style>
+    :root {
+      --bg: #08111f;
+      --panel: #111c2f;
+      --panel-2: #17243a;
+      --text: #f4f7fb;
+      --muted: #98a6ba;
+      --accent: #4ee1a0;
+      --accent-dark: #183c31;
+      --danger: #ff6b6b;
+      --warning: #ffd166;
+      --border: rgba(255,255,255,.09);
+      --shadow: 0 20px 45px rgba(0,0,0,.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top right, rgba(78,225,160,.12), transparent 35%),
+        linear-gradient(160deg, #08111f 0%, #0b1526 100%);
+    }
+
+    button, input, select { font: inherit; }
+
+    .app {
+      width: min(100%, 760px);
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .brand h1 {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      margin: 0;
+      letter-spacing: -.03em;
+    }
+
+    .brand p {
+      color: var(--muted);
+      margin: 5px 0 0;
+      font-size: .95rem;
+    }
+
+    .sound-toggle {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+
+    .card {
+      background: rgba(17,28,47,.94);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .workout-card {
+      padding: 22px;
+      text-align: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .workout-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 5px;
+      background: var(--accent);
+      transition: background .2s ease;
+    }
+
+    .phase-label {
+      margin: 8px 0 4px;
+      color: var(--muted);
+      font-size: .82rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .instruction {
+      margin: 0;
+      font-size: clamp(2rem, 9vw, 4.4rem);
+      letter-spacing: -.06em;
+      line-height: 1;
+    }
+
+    .timer {
+      margin: 18px 0 10px;
+      font-size: clamp(4.8rem, 22vw, 9rem);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -.07em;
+      line-height: .9;
+      font-weight: 800;
+    }
+
+    .subtext {
+      color: var(--muted);
+      min-height: 24px;
+      margin: 0 0 20px;
+    }
+
+    .progress-track {
+      height: 10px;
+      background: rgba(255,255,255,.08);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 14px 0 12px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      border-radius: inherit;
+      transition: width .25s linear, background .2s ease;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 16px 0 22px;
+    }
+
+    .stat {
+      padding: 12px 8px;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: rgba(255,255,255,.025);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: .76rem;
+      margin-bottom: 4px;
+    }
+
+    .stat strong { font-size: 1rem; }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr 1fr;
+      gap: 10px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 16px;
+      padding: 15px 14px;
+      cursor: pointer;
+      font-weight: 750;
+      transition: transform .12s ease, opacity .12s ease;
+    }
+
+    .btn:active { transform: scale(.98); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #07140f;
+    }
+
+    .btn-secondary {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .setup-card {
+      padding: 20px;
+      margin-top: 18px;
+    }
+
+    .setup-card h2 {
+      margin: 0 0 4px;
+      font-size: 1.15rem;
+    }
+
+    .setup-card > p {
+      color: var(--muted);
+      margin: 0 0 18px;
+      font-size: .92rem;
+    }
+
+    .preset-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .preset {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.035);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 10px;
+      cursor: pointer;
+    }
+
+    .preset.active {
+      border-color: var(--accent);
+      background: var(--accent-dark);
+    }
+
+    .fields {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    label {
+      display: block;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    input {
+      width: 100%;
+      margin-top: 7px;
+      padding: 12px 13px;
+      color: var(--text);
+      background: #0d1728;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      outline: none;
+    }
+
+    input:focus { border-color: var(--accent); }
+
+    .validation-message {
+      min-height: 20px;
+      margin: 12px 0 0;
+      color: var(--warning);
+      font-size: .84rem;
+    }
+
+    input[aria-invalid="true"] {
+      border-color: var(--danger);
+    }
+
+    .summary {
+      margin-top: 16px;
+      padding: 14px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+
+    .summary strong { color: var(--text); }
+
+    .footer-note {
+      color: var(--muted);
+      text-align: center;
+      font-size: .8rem;
+      margin-top: 18px;
+    }
+
+    @media (max-width: 560px) {
+      .app { padding-top: 16px; }
+      .topbar { align-items: flex-start; }
+      .workout-card, .setup-card { border-radius: 20px; }
+      .workout-card { padding: 18px 14px; }
+      .fields { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .preset-row { grid-template-columns: 1fr; }
+      .controls { grid-template-columns: 1fr 1.2fr 1fr; }
+      .btn { padding: 14px 8px; font-size: .92rem; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="topbar">
+      <div class="brand">
+        <h1>RideIntervals <small style="font-size:.45em;color:var(--muted);font-weight:600;">v0.2.0</small></h1>
+        <p>Your simple exercise bike coach.</p>
+      </div>
+      <button id="soundToggle" class="sound-toggle" type="button" aria-pressed="true">Sound on</button>
+    </div>
+
+    <section class="card workout-card" id="workoutCard">
+      <p class="phase-label" id="phaseLabel">Ready</p>
+      <h2 class="instruction" id="instruction">Choose a workout</h2>
+      <div class="timer" id="timer" aria-live="polite">00:00</div>
+      <p class="subtext" id="subtext">Press Start when you are ready.</p>
+
+      <div class="progress-track" aria-label="Workout progress">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><span>Round</span><strong id="roundStat">0 / 0</strong></div>
+        <div class="stat"><span>Next</span><strong id="nextStat">Warm-up</strong></div>
+        <div class="stat"><span>Total</span><strong id="totalStat">00:00</strong></div>
+      </div>
+
+      <div class="controls">
+        <button id="resetBtn" class="btn btn-secondary" type="button">Reset</button>
+        <button id="startBtn" class="btn btn-primary" type="button">Start</button>
+        <button id="skipBtn" class="btn btn-secondary" type="button">Skip</button>
+      </div>
+    </section>
+
+    <section class="card setup-card">
+      <h2>Workout setup</h2>
+      <p>Select a preset or adjust the timings yourself.</p>
+
+      <div class="preset-row">
+        <button class="preset active" type="button" data-preset="beginner">Beginner</button>
+        <button class="preset" type="button" data-preset="hiit">HIIT</button>
+        <button class="preset" type="button" data-preset="endurance">Endurance</button>
+      </div>
+
+      <div class="fields">
+        <label>Warm-up (minutes)
+          <input id="warmupInput" type="number" min="0" max="60" step="1" value="3" aria-describedby="validationMessage">
+        </label>
+        <label>Fast pedal (seconds)
+          <input id="workInput" type="number" min="5" max="3600" step="5" value="30" aria-describedby="validationMessage">
+        </label>
+        <label>Recovery (seconds)
+          <input id="restInput" type="number" min="5" max="3600" step="5" value="60" aria-describedby="validationMessage">
+        </label>
+        <label>Rounds
+          <input id="roundsInput" type="number" min="1" max="200" step="1" value="8" aria-describedby="validationMessage">
+        </label>
+        <label>Cool-down (minutes)
+          <input id="cooldownInput" type="number" min="0" max="60" step="1" value="3" aria-describedby="validationMessage">
+        </label>
+      </div>
+
+      <p id="validationMessage" class="validation-message" role="alert" aria-live="polite"></p>
+      <div class="summary" id="summary"></div>
+    </section>
+
+    <p class="footer-note">Keep resistance at a safe level and stop if you feel unwell.</p>
+  </main>
+
+  <script>
+    const els = {
+      timer: document.getElementById('timer'),
+      instruction: document.getElementById('instruction'),
+      phaseLabel: document.getElementById('phaseLabel'),
+      subtext: document.getElementById('subtext'),
+      progressBar: document.getElementById('progressBar'),
+      roundStat: document.getElementById('roundStat'),
+      nextStat: document.getElementById('nextStat'),
+      totalStat: document.getElementById('totalStat'),
+      startBtn: document.getElementById('startBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      skipBtn: document.getElementById('skipBtn'),
+      soundToggle: document.getElementById('soundToggle'),
+      workoutCard: document.getElementById('workoutCard'),
+      warmup: document.getElementById('warmupInput'),
+      work: document.getElementById('workInput'),
+      rest: document.getElementById('restInput'),
+      rounds: document.getElementById('roundsInput'),
+      cooldown: document.getElementById('cooldownInput'),
+      summary: document.getElementById('summary'),
+      validationMessage: document.getElementById('validationMessage')
+    };
+
+    const presets = {
+      beginner: { warmup: 3, work: 30, rest: 60, rounds: 8, cooldown: 3 },
+      hiit: { warmup: 4, work: 40, rest: 20, rounds: 10, cooldown: 4 },
+      endurance: { warmup: 5, work: 120, rest: 60, rounds: 6, cooldown: 5 }
+    };
+
+    let intervals = [];
+    let intervalIndex = 0;
+    let secondsLeft = 0;
+    let timerId = null;
+    let running = false;
+    let soundOn = true;
+    let elapsed = 0;
+    let totalDuration = 0;
+    let audioContext = null;
+
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+      const secs = Math.max(0, seconds % 60).toString().padStart(2, '0');
+      return `${mins}:${secs}`;
+    }
+
+    const limits = {
+      warmup: { min: 0, max: 60, fallback: 3, label: 'Warm-up' },
+      work: { min: 5, max: 3600, fallback: 30, label: 'Fast pedal' },
+      rest: { min: 5, max: 3600, fallback: 60, label: 'Recovery' },
+      rounds: { min: 1, max: 200, fallback: 8, label: 'Rounds', integer: true },
+      cooldown: { min: 0, max: 60, fallback: 3, label: 'Cool-down' }
+    };
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function readValue(input, rules) {
+      let value = Number(input.value);
+      if (!Number.isFinite(value)) value = rules.fallback;
+      if (rules.integer) value = Math.round(value);
+      return clamp(value, rules.min, rules.max);
+    }
+
+    function getValues() {
+      return {
+        warmup: readValue(els.warmup, limits.warmup),
+        work: readValue(els.work, limits.work),
+        rest: readValue(els.rest, limits.rest),
+        rounds: readValue(els.rounds, limits.rounds),
+        cooldown: readValue(els.cooldown, limits.cooldown)
+      };
+    }
+
+    function validateAndNormaliseInputs(showMessage = true) {
+      const inputs = [
+        ['warmup', els.warmup],
+        ['work', els.work],
+        ['rest', els.rest],
+        ['rounds', els.rounds],
+        ['cooldown', els.cooldown]
+      ];
+      const corrections = [];
+
+      inputs.forEach(([key, input]) => {
+        const rules = limits[key];
+        const original = Number(input.value);
+        const corrected = readValue(input, rules);
+        const invalid = !Number.isFinite(original) || original !== corrected;
+
+        input.setAttribute('aria-invalid', String(invalid));
+        if (invalid) {
+          input.value = corrected;
+          const unit = key === 'rounds' ? '' : (key === 'work' || key === 'rest' ? ' seconds' : ' minutes');
+          corrections.push(`${rules.label} adjusted to ${corrected}${unit}`);
+        }
+      });
+
+      els.validationMessage.textContent = showMessage && corrections.length
+        ? `${corrections.join('. ')}.`
+        : '';
+
+      return corrections.length === 0;
+    }
+
+    function buildWorkout() {
+      const v = getValues();
+      const result = [];
+
+      if (v.warmup > 0) {
+        result.push({ type: 'warmup', label: 'Warm-up', instruction: 'Easy pace', seconds: v.warmup * 60, round: 0 });
+      }
+
+      for (let i = 1; i <= v.rounds; i++) {
+        result.push({ type: 'work', label: 'Push', instruction: 'Pedal fast', seconds: v.work, round: i });
+        if (i < v.rounds || v.cooldown > 0) {
+          result.push({ type: 'rest', label: 'Recovery', instruction: 'Slow down', seconds: v.rest, round: i });
+        }
+      }
+
+      if (v.cooldown > 0) {
+        result.push({ type: 'cooldown', label: 'Cool-down', instruction: 'Easy pace', seconds: v.cooldown * 60, round: v.rounds });
+      }
+
+      return result;
+    }
+
+    function totalSeconds(list) {
+      return list.reduce((sum, item) => sum + item.seconds, 0);
+    }
+
+    function updateSummary() {
+      const v = getValues();
+      const list = buildWorkout();
+      const total = totalSeconds(list);
+      els.summary.innerHTML = `<strong>${formatTime(total)}</strong> total · ${v.rounds} rounds · ${v.work}s fast / ${v.rest}s recovery`;
+      els.totalStat.textContent = formatTime(total);
+      if (!running && !timerId) {
+        intervals = list;
+        totalDuration = total;
+        renderReady();
+      }
+    }
+
+    function setTheme(type) {
+      const map = {
+        warmup: '#ffd166',
+        work: '#ff6b6b',
+        rest: '#4ee1a0',
+        cooldown: '#6ea8fe',
+        complete: '#4ee1a0'
+      };
+      const colour = map[type] || '#4ee1a0';
+      els.workoutCard.style.setProperty('--accent', colour);
+      els.progressBar.style.background = colour;
+    }
+
+    function renderReady() {
+      const list = buildWorkout();
+      const first = list[0];
+      els.phaseLabel.textContent = 'Ready';
+      els.instruction.textContent = 'Choose a workout';
+      els.timer.textContent = '00:00';
+      els.subtext.textContent = 'Press Start when you are ready.';
+      els.progressBar.style.width = '0%';
+      els.roundStat.textContent = `0 / ${getValues().rounds}`;
+      els.nextStat.textContent = first ? first.label : 'Start';
+      els.startBtn.textContent = 'Start';
+      setTheme('rest');
+    }
+
+    function currentItem() {
+      return intervals[intervalIndex];
+    }
+
+    function renderCurrent() {
+      const item = currentItem();
+      if (!item) return finishWorkout();
+
+      els.phaseLabel.textContent = item.label;
+      els.instruction.textContent = item.instruction;
+      els.timer.textContent = formatTime(secondsLeft);
+      els.subtext.textContent = item.type === 'work'
+        ? 'Increase your pace while staying controlled.'
+        : item.type === 'rest'
+          ? 'Keep moving gently and recover.'
+          : 'Settle into a comfortable pace.';
+
+      const rounds = getValues().rounds;
+      els.roundStat.textContent = `${Math.min(item.round, rounds)} / ${rounds}`;
+      els.nextStat.textContent = intervals[intervalIndex + 1]?.label || 'Finish';
+      els.progressBar.style.width = `${Math.min(100, (elapsed / Math.max(1, totalDuration)) * 100)}%`;
+      setTheme(item.type);
+      document.title = `${formatTime(secondsLeft)} · ${item.instruction}`;
+    }
+
+    function beep(frequency = 660, duration = 0.12) {
+      if (!soundOn) return;
+      try {
+        audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        gain.gain.setValueAtTime(0.12, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + duration);
+      } catch (_) {}
+    }
+
+    function beginInterval(index) {
+      intervalIndex = index;
+      const item = currentItem();
+      if (!item) return finishWorkout();
+      secondsLeft = item.seconds;
+      beep(item.type === 'work' ? 880 : 560, .16);
+      renderCurrent();
+    }
+
+    function tick() {
+      if (!running) return;
+
+      secondsLeft -= 1;
+      elapsed += 1;
+
+      if (secondsLeft <= 0) {
+        beginInterval(intervalIndex + 1);
+      } else {
+        if (secondsLeft <= 3) beep(760, .08);
+        renderCurrent();
+      }
+    }
+
+    function startPause() {
+      if (!running && !timerId) {
+        validateAndNormaliseInputs(true);
+        intervals = buildWorkout();
+        totalDuration = totalSeconds(intervals);
+        elapsed = 0;
+        beginInterval(0);
+        running = true;
+        timerId = setInterval(tick, 1000);
+        els.startBtn.textContent = 'Pause';
+        disableInputs(true);
+        return;
+      }
+
+      running = !running;
+      els.startBtn.textContent = running ? 'Pause' : 'Resume';
+    }
+
+    function skip() {
+      if (!timerId) return;
+      elapsed += secondsLeft;
+      beginInterval(intervalIndex + 1);
+    }
+
+    function reset() {
+      clearInterval(timerId);
+      timerId = null;
+      running = false;
+      intervalIndex = 0;
+      secondsLeft = 0;
+      elapsed = 0;
+      document.title = 'RideIntervals v0.2.0';
+      disableInputs(false);
+      updateSummary();
+    }
+
+    function finishWorkout() {
+      clearInterval(timerId);
+      timerId = null;
+      running = false;
+      els.phaseLabel.textContent = 'Complete';
+      els.instruction.textContent = 'Workout done';
+      els.timer.textContent = '00:00';
+      els.subtext.textContent = 'Good work. Recover and hydrate.';
+      els.roundStat.textContent = `${getValues().rounds} / ${getValues().rounds}`;
+      els.nextStat.textContent = 'Done';
+      els.progressBar.style.width = '100%';
+      els.startBtn.textContent = 'Start again';
+      disableInputs(false);
+      setTheme('complete');
+      beep(980, .35);
+      document.title = 'Workout complete · RideIntervals v0.2.0';
+    }
+
+    function disableInputs(disabled) {
+      document.querySelectorAll('.setup-card input, .preset').forEach(el => el.disabled = disabled);
+    }
+
+    function applyPreset(name) {
+      const p = presets[name];
+      els.warmup.value = p.warmup;
+      els.work.value = p.work;
+      els.rest.value = p.rest;
+      els.rounds.value = p.rounds;
+      els.cooldown.value = p.cooldown;
+      document.querySelectorAll('.preset').forEach(btn => btn.classList.toggle('active', btn.dataset.preset === name));
+      updateSummary();
+    }
+
+    document.querySelectorAll('.preset').forEach(btn => {
+      btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
+    });
+
+    document.querySelectorAll('.setup-card input').forEach(input => {
+      input.addEventListener('input', () => {
+        document.querySelectorAll('.preset').forEach(btn => btn.classList.remove('active'));
+        updateSummary();
+      });
+
+      input.addEventListener('change', () => {
+        validateAndNormaliseInputs(true);
+        updateSummary();
+      });
+    });
+
+    els.startBtn.addEventListener('click', startPause);
+    els.resetBtn.addEventListener('click', reset);
+    els.skipBtn.addEventListener('click', skip);
+    els.soundToggle.addEventListener('click', () => {
+      soundOn = !soundOn;
+      els.soundToggle.textContent = soundOn ? 'Sound on' : 'Sound off';
+      els.soundToggle.setAttribute('aria-pressed', String(soundOn));
+      if (soundOn) beep();
+    });
+
+    updateSummary();
+  </script>
+</body>
+</html>
